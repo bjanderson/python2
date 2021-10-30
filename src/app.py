@@ -3,91 +3,130 @@ import sqlite3
 print()  # just adding a new line in the terminal output
 
 # set the name of the database file
-dbLocation = "python-app.db"
+databaseLocation = "python-app.db"
 
-# this is the table definition
+
+def showError(error, statement):
+    template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+    message = template.format(type(error).__name__, error.args)
+    print(message, statement, "\n")
+
+
+def executeStatement(statement):
+    print(f"execute - statement: {statement}")
+    try:
+        connection = sqlite3.connect(databaseLocation)
+        cursor = connection.cursor()
+        cursor.execute(statement)
+        connection.commit()
+        print()
+    except Exception as error:
+        showError(error, statement)
+    finally:
+        connection.close()
+
+
+def executeFetchAllStatment(statement):
+    result = None
+    try:
+        connection = sqlite3.connect(databaseLocation)
+        cursor = connection.cursor()
+        result = cursor.execute(statement).fetchall()
+        print(result, "\n")
+    except Exception as error:
+        showError(error, statement)
+    finally:
+        connection.close()
+
+    return result
+
+
+def executeFetchOneStatment(statement):
+    result = None
+    try:
+        connection = sqlite3.connect(databaseLocation)
+        cursor = connection.cursor()
+        result = cursor.execute(statement).fetchone()
+        print(result, "\n")
+    except Exception as error:
+        showError(error, statement)
+    finally:
+        connection.close()
+
+    return result
+
+
 tableName = "user"
-
-# Try to create the table, or handle the error
-# and remember to close the connection when you're done
-print("### Create the table ###")
-stmt = f"""CREATE TABLE IF NOT EXISTS {tableName} (
+statement = f"""CREATE TABLE IF NOT EXISTS {tableName} (
     email TEXT NOT NULL,
     name TEXT NOT NULL,
     pk TEXT NOT NULL PRIMARY KEY
 );"""
-try:
-    connection = sqlite3.connect(dbLocation)
-    cursor = connection.cursor()
-    cursor.execute(stmt)
-    connection.commit()
-    print()
-except Exception as e:
-    template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-    message = template.format(type(e).__name__, e.args)
-    print(message, "\n")
-finally:
-    connection.close()
+executeStatement(statement)
 
-# Add rows to the table
-print("### Insert a row into the table ###")
-stmt = f"INSERT INTO {tableName} (email, name, pk) VALUES ('user1@example.com', 'User One', 'userpk1')"
-try:
-    connection = sqlite3.connect(dbLocation)
-    cursor = connection.cursor()
-    cursor.execute(stmt)
-    connection.commit()
-    print()
-except Exception as e:
-    template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-    message = template.format(type(e).__name__, e.args)
-    print(message, stmt, "\n")
-finally:
-    connection.close()
+statement = f"INSERT INTO {tableName} (email, name, pk) VALUES ('user1@example.com', 'User One', 'userpk1')"
+executeStatement(statement)
 
-# fetch all rows from the table
-print("### Fetch all rows from the table ###")
-stmt = f"SELECT email, name, pk FROM {tableName}"
-try:
-    connection = sqlite3.connect(dbLocation)
-    cursor = connection.cursor()
-    result = cursor.execute(stmt).fetchall()
-    print(result, "\n")
-except Exception as e:
-    template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-    message = template.format(type(e).__name__, e.args)
-    print(message, stmt, "\n")
-finally:
-    connection.close()
+statement = f"SELECT email, name, pk FROM {tableName}"
+executeFetchAllStatment(statement)
+
+statement = f"SELECT email, name, pk FROM {tableName} WHERE pk = 'userpk1'"
+executeFetchOneStatment(statement)
+
+statement = f"DELETE FROM {tableName} WHERE pk = 'userpk1'"
+executeStatement(statement)
+
+#####################################################################################
 
 
-# fetch one row from the table
-print("### Fetch one row from the table ###")
-stmt = f"SELECT email, name, pk FROM {tableName} WHERE pk = 'userpk1'"
-try:
-    connection = sqlite3.connect(dbLocation)
-    cursor = connection.cursor()
-    result = cursor.execute(stmt).fetchone()
-    print(result, "\n")
-except Exception as e:
-    template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-    message = template.format(type(e).__name__, e.args)
-    print(message, stmt, "\n")
-finally:
-    connection.close()
+def createTable(tableName, tableDefinition):
+    statement = f"""CREATE TABLE IF NOT EXISTS {tableName} ({tableDefinition});"""
+    executeStatement(statement)
 
-# delete a row from the table
-print("### Delete a row from the table ###")
-stmt = f"DELETE FROM {tableName} WHERE pk = 'userpk1'"
-try:
-    connection = sqlite3.connect(dbLocation)
-    cursor = connection.cursor()
-    cursor.execute(stmt)
-    connection.commit()
-    print()
-except Exception as e:
-    template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-    message = template.format(type(e).__name__, e.args)
-    print(message, stmt, "\n")
-finally:
-    connection.close()
+
+tableName = "password"
+tableDefinition = """
+password TEXT NOT NULL,
+userPK TEXT NOT NULL,
+FOREIGN KEY(userPK) REFERENCES user(pk),
+PRIMARY KEY(password, userPK)
+"""
+createTable(tableName, tableDefinition)
+
+# --------------------
+def createRow(tableName, fields, values):
+    fields = ", ".join(fields)
+    values = list(map(lambda value: f"'{value}'", values))
+    values = ", ".join(values)
+    statement = f"INSERT INTO {tableName} ({fields}) VALUES ({values})"
+    executeStatement(statement)
+
+
+tableName = "password"
+fields = ["password", "userPK"]
+values = ["Password_1", "userpk1"]
+createRow(tableName, fields, values)
+
+# --------------------
+def selectAll(tableName, fields):
+    fields = ", ".join(fields)
+    statement = f"SELECT {fields} FROM {tableName}"
+    return executeFetchAllStatment(statement)
+
+
+tableName = "password"
+fields = ["password", "userPK"]
+results = selectAll(tableName, fields)
+print("results: ", results)
+
+# --------------------
+def selectOne(tableName, fields, pk, pkField="pk"):
+    fields = ", ".join(fields)
+    statement = f"SELECT {fields} FROM {tableName} WHERE {pkField} = '{pk}'"
+    return executeFetchOneStatment(statement)
+
+
+tableName = "password"
+fields = ["password", "userPK"]
+result = selectOne(tableName, fields, "userpk1", "userPK")
+print("result: ", result)
