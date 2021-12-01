@@ -26,7 +26,6 @@ def showError(error, statement):
     message = template.format(type(error).__name__, error.args)
     print(message, statement, "\n")
 
-
 class DB:
     def __init__(self, location):
         self.location = location
@@ -158,23 +157,24 @@ databaseLocation = "python-app.db"  # specify the database file location
 db = DB(databaseLocation)  # create an instance of the database class
 userTable = UserTable(db)  # create an instance of the user table class
 
-# user = {"email": "my-email@example.com", "name": "jonny"}
-# userTable.create(user)
+user = {"email": "my-email@example.com", "name": "jonny"}
+userTable.create(user)
 
-# user2 = {
-#     "email": "different-email@example.com",
-#     "name": "different-jonny",
-#     "pk": "51722",
-# }
-# userTable.update(user2)
+user2 = {
+    "email": "different-email@example.com",
+    "name": "different-jonny",
+    "pk": "23844",
+}
+userTable.update(user2)
 
-# userTable.delete("51722")
 
-# one = userTable.get("42221")
-# print(f"one: {one}")
+userTable.delete("23844")
 
-# all = userTable.getAll()
-# print(f"all: {all}")
+one = userTable.get("23844")
+print(f"one: {one}")
+
+all = userTable.getAll()
+print(f"all: {all}")
 
 
 ###
